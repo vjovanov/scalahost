@@ -61,7 +61,7 @@ trait Expansion extends scala.reflect.internal.show.Printers {
           private def macroExpandWithRuntime(rc: ScalareflectMacroContext): Any = {
             import global.{Tree => ScalaTree}
             import scala.meta.{Tree => ScalametaTree, Term => ScalametaTerm}
-            import scala.meta.internal.eval.{eval => scalametaEval}
+            // import scala.meta.internal.eval.{eval => scalametaEval}
             import org.scalameta.unreachable
             lazy val hc = Scalahost.mkMacroContext[global.type](rc)
             lazy val scalareflectInvocation: ScalaTree = {
@@ -80,7 +80,7 @@ trait Expansion extends scala.reflect.internal.show.Printers {
               ???
             }
             lazy val scalametaResult: Any = scalametaInvocation match {
-              case term: ScalametaTerm => scalametaEval(term)
+              case term: ScalametaTerm => ??? //scalametaEval(term)
               case other => unreachable(debug(other, other.show[Raw]))
             }
             lazy val scalareflectResult: Any = scalametaResult match {
