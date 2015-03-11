@@ -1,8 +1,6 @@
 package scaladays
 
 import org.scalatest._
-import scaladays.adt._
-import scaladays.serialization._
 
 sealed trait List
 final case class Cons(head: Int, tail: List) extends List
@@ -13,8 +11,21 @@ class ScalaDays extends FunSuite {
   // Initial commit
   // master
   //  scalareflect  authored on Mar 8, 2014
-  test("San Francisco 2015") {
-    val list: List = Cons(1, Cons(2, Nil))
-    assert(serialize(list) === """{"head": 1, "tail": {"head": 2, "tail": {$tag: 1}, $tag: 0}, $tag: 0}""")
+  {
+    import scaladays.adt._
+    import scaladays.serialization._
+    test("San Francisco 2015") {
+      val list: List = Cons(1, Cons(2, Nil))
+      assert(serialize(list) === """{"head": 1, "tail": {"head": 2, "tail": {$tag: 1}, $tag: 0}, $tag: 0}""")
+    }
+  }
+
+  {
+    import scaladays.same.adt._
+    import scaladays.same.serialization._
+    test("San Francisco 2015 Same Compilation Unit") {
+      val list: List = Cons(1, Cons(2, Nil))
+      assert(serialize(list) === """{"head": 1, "tail": {"head": 2, "tail": {$tag: 1}, $tag: 0}, $tag: 0}""")
+    }
   }
 }
