@@ -15,7 +15,7 @@ import scala.util.control.ControlThrowable
 import scala.collection.mutable
 import scala.meta.dialects.Scala211
 import scala.meta.internal.{ast => m}
-import scala.meta.internal.eval.eval
+import scala.meta.internal.eval._
 import scala.meta.macros.{Context => ScalametaMacroContext}
 import scala.meta.internal.hosts.scalac.contexts.{MacroContext => ScalahostMacroContext}
 import scala.meta.internal.hosts.scalac.{PluginBase => ScalahostPlugin, Scalahost}
@@ -64,17 +64,19 @@ trait Expansion extends scala.reflect.internal.show.Printers {
             def fail(errorMessage: String) = throw new AbortMacroException(rc.macroApplication.pos, errorMessage)
             implicit val mc = Scalahost.mkMacroContext[global.type](rc)
             val mresult: Any = {
-              // TODO: to be uncommented when the interpreter works
-              // val ginvocation: g.Tree = ??? // TODO: needs to be coordinated with the interpreter
-              // val minvocation: m.Term = mc.toMtree(minvocation, classOf[m.Term])
-              // eval(minvocation)
               if (sys.props("macro.debug") != null) println(rc.macroApplication)
               val q"$_[..$gtargs](...$gargss)" = rc.macroApplication
               val mtargs = gtargs.map(gtarg => mc.toMtype(gtarg.tpe))
               val margss = mmap(gargss)(mc.toMtree(_, classOf[m.Term]))
               val mmacroargs = mtargs ++ margss.flatten :+ mc
               if (currentRun.compiles(rc.macroApplication.symbol)) {
-                fail("implementation restriction: until the TASTY interpreter is implemented, scala.meta macros can only be expanded in a separate compilation run")
+                val macroUnit = currentRun.units.find(u => u.body.exists(x => x.symbol == rc.macroApplication.symbol)).get.body
+                val reflectMacroMethod = macroUnit.find({case mthd: DefDef =>
+                    mthd.name.toString == rc.macroApplication.symbol.name.encoded  + "$impl"
+                  case _ => false
+                }).get
+                val mMacroBody = mc.toMtree(reflectMacroMethod, classOf[m.Defn])
+                evalFunc(mMacroBody, List(mmacroargs))
               } else {
                 val jclassloader = {
                   val findMacroClassLoader = analyzer.getClass.getMethods().filter(_.getName.endsWith("findMacroClassLoader")).head
